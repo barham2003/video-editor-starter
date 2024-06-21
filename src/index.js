@@ -25,6 +25,7 @@ apiRouter(server);
 
 // Handle all the errors that could happen in the routes
 server.handleErr((error, req, res) => {
+  console.log(error);
   if (error && error.status) {
     res.status(error.status).json({ error: error.message });
   } else {
