@@ -83,6 +83,34 @@ const extractAudio = async (req, res, handleErr) => {
   }
 };
 
+const resizeVideo = async (req, res, handleErr) => {
+  const videoId = req.body.videoId;
+  const width = Number(req.body.width);
+  const height = Number(req.body.height);
+
+  DB.update();
+  const video = DB.videos.find((video) => video.videoId === videoId);
+
+  video.resizes[`${width}x${height}`] = { processing: true };
+  const originalVideoPath = `./storage/${video.videoId}/original.${video.extension}`;
+  const targetVideoPath = `./storage/${video.videoId}/${width}x${height}.${video.extension}`;
+
+  try {
+    await FF.resize(originalVideoPath, targetVideoPath, width, height);
+
+    video.resizes[`${width}x${height}`].processing = false;
+    DB.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "The video is now being processed!",
+    });
+  } catch (e) {
+    util.deleteFile(targetVideoPath);
+    return handleErr(e);
+  }
+};
+
 const getVideoAssets = async (req, res, handleError) => {
   const videoId = req.params.get("videoId");
   const type = req.params.get("type");
@@ -98,50 +126,54 @@ const getVideoAssets = async (req, res, handleError) => {
   let file;
   let mimeType;
   let filename;
-  switch (type) {
-    case "thumbnail":
-      file = await fs.open(`./storage/${videoId}/thumbnail.jpg`, "r");
-      mimeType = "image/jpg";
-      break;
-    case "audio":
-      file = await fs.open(`./storage/${videoId}/audio.aac`, "r");
-      mimeType = "audio/aac";
-      filename = `${video.name}-audio.aac`;
-      break;
 
-    case "resize":
-      const dimensions = req.params.get("dimensions");
-      file = await fs.open(
-        `./storage/${videoId}/${dimensions}.${video.extension}, "r`
-      );
-      mimeType = "video/mp4";
-      filename = `${video.name}-${dimensions}.${video.extension}`;
-      break;
-    case "original":
-      file = await fs.open(`./storage/${videoId}/original.mp4`, "r");
-      mimeType = "video/mp4";
-      filename = `${video.name}.${video.extension}`;
-      break;
+  try {
+    switch (type) {
+      case "thumbnail":
+        file = await fs.open(`./storage/${videoId}/thumbnail.jpg`, "r");
+        mimeType = "image/jpg";
+        break;
+      case "audio":
+        file = await fs.open(`./storage/${videoId}/audio.aac`, "r");
+        mimeType = "audio/aac";
+        filename = `${video.name}-audio.aac`;
+        break;
+
+      case "resize":
+        const dimensions = req.params.get("dimensions");
+        file = await fs.open(`./storage/${videoId}/${dimensions}.mp4`, "r");
+        mimeType = "video/mp4";
+        filename = `${video.name}-${dimensions}.${video.extension}`;
+        break;
+      case "original":
+        file = await fs.open(`./storage/${videoId}/original.mp4`, "r");
+        mimeType = "video/mp4";
+        console.log(file);
+        filename = `${video.name}.${video.extension}`;
+        break;
+    }
+
+    if (type !== "thumbnail") {
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    }
+
+    // Grab the file size
+    const stat = await file.stat();
+    const fileStream = file.createReadStream();
+
+    // Set the content type header based on the file type
+    res.setHeader("Content-Type", mimeType);
+
+    // Set the content length to the size of the file
+    res.setHeader("Content-Length", stat.size);
+
+    res.status(200);
+    await pipeline(fileStream, res);
+
+    file.close();
+  } catch (e) {
+    handleError(e);
   }
-
-  if (type !== "thumbnail") {
-    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
-  }
-
-  // Grab the file size
-  const stat = await file.stat();
-  const fileStream = file.createReadStream();
-
-  // Set the content type header based on the file type
-  res.setHeader("Content-Type", mimeType);
-
-  // Set the content length to the size of the file
-  res.setHeader("Content-Length", stat.size);
-
-  res.status(200);
-  await pipeline(fileStream, res);
-
-  file.close();
 };
 
 const controller = {
@@ -149,6 +181,7 @@ const controller = {
   uploadVideo,
   getVideoAssets,
   extractAudio,
+  resizeVideo,
 };
 
 module.exports = controller;
