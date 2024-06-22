@@ -1,1 +1,60 @@
-[{"id":2,"videoId":"477111bf","name":"The Beauty Of Mr Robot_3","extension":"mp4","dimensions":{"width":1920,"height":1080},"userId":1,"extractedAudio":true,"resizes":{"1000x1000":{"processing":false},"500x500":{"processing":false},"100x100":{"processing":false}}},{"id":1,"videoId":"77631104","name":"011 Virtual Populate_ Tours and Reviews","extension":"mp4","dimensions":{"width":1920,"height":1080},"userId":1,"extractedAudio":true,"resizes":{}},{"id":2,"videoId":"613ece28","name":"video","extension":"mp4","dimensions":{"width":1920,"height":1040},"userId":1,"extractedAudio":false,"resizes":{}}]
+[
+  {
+    "id": 2,
+    "videoId": "477111bf",
+    "name": "The Beauty Of Mr Robot_3",
+    "extension": "mp4",
+    "dimensions": {
+      "width": 1920,
+      "height": 1080
+    },
+    "userId": 1,
+    "extractedAudio": true,
+    "resizes": {
+      "200x200": {
+        "processing": false
+      },
+      "100x100": {
+        "processing": false
+      },
+      "300x300": {
+        "processing": false
+      },
+      "500x500": {
+        "processing": false
+      },
+      "600x600": {
+        "processing": false
+      },
+      "500x504": {
+        "processing": false
+      }
+    }
+  },
+  {
+    "id": 1,
+    "videoId": "77631104",
+    "name": "011 Virtual Populate_ Tours and Reviews",
+    "extension": "mp4",
+    "dimensions": {
+      "width": 1920,
+      "height": 1080
+    },
+    "userId": 1,
+    "extractedAudio": true,
+    "resizes": {}
+  },
+  {
+    "id": 2,
+    "videoId": "613ece28",
+    "name": "video",
+    "extension": "mp4",
+    "dimensions": {
+      "width": 1920,
+      "height": 1040
+    },
+    "userId": 1,
+    "extractedAudio": false,
+    "resizes": {}
+  }
+]

@@ -5,6 +5,13 @@ const { pipeline } = require("stream/promises");
 const util = require("../../lib/util");
 const DB = require("../DB");
 const FF = require("../../lib/FF");
+const cluster = require("node:cluster");
+const JobQueue = require("../../lib/JobQueue.js");
+
+let jobs;
+if (cluster.isPrimary) {
+  jobs = new JobQueue();
+}
 
 const getVideos = (req, res, handleError) => {
   DB.update();
@@ -90,25 +97,30 @@ const resizeVideo = async (req, res, handleErr) => {
 
   DB.update();
   const video = DB.videos.find((video) => video.videoId === videoId);
-
   video.resizes[`${width}x${height}`] = { processing: true };
-  const originalVideoPath = `./storage/${video.videoId}/original.${video.extension}`;
-  const targetVideoPath = `./storage/${video.videoId}/${width}x${height}.${video.extension}`;
 
-  try {
-    await FF.resize(originalVideoPath, targetVideoPath, width, height);
-
-    video.resizes[`${width}x${height}`].processing = false;
-    DB.save();
-
-    res.status(200).json({
-      status: "success",
-      message: "The video is now being processed!",
+  if (cluster.isPrimary) {
+    jobs.enqueue({
+      width,
+      video,
+      height,
+      type: "resize",
     });
-  } catch (e) {
-    util.deleteFile(targetVideoPath);
-    return handleErr(e);
+  } else {
+    process.send({
+      messageType: "new-resize",
+      data: {
+        width,
+        height,
+        videoId,
+      },
+    });
   }
+
+  res.status(200).json({
+    status: "success",
+    message: "The video is now being processed!",
+  });
 };
 
 const getVideoAssets = async (req, res, handleError) => {
